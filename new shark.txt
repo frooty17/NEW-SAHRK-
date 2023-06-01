@@ -1,0 +1,145 @@
+#1.Y BUS EXP
+
+n = int(input('Total number of buses n: '))
+
+z = [[0] * n for _ in range(n)]
+y = [[0] * n for _ in range(n)]
+
+for i in range(n):
+    for k in range(i, n):
+        z[i][k] = float(input(f'z({i+1},{k+1}): '))
+        y[i][k] = 1 / z[i][k]
+        y[k][i] = y[i][k]
+
+ys = [0] * n
+
+for i in range(n):
+    ys[i] = float(input(f'y(0,{i+1}): '))
+
+Y = [[0] * n for _ in range(n)]
+
+for i in range(n):
+    for k in range(n):
+        if i != k:
+            Y[i][k] = -y[i][k]
+            Y[i][i] += y[i][k]
+        Y[i][i] += ys[i]
+
+print('Y_bus:')
+for row in Y:
+    print(' '.join(f'{element:.6f}' for element in row))
+
+
+
+#2. PS EXP 2
+
+type = input('Type of line: Press 1 for short line, 2 for medium line, 3 for long transmission line: ');
+r = input('Resistance (ohm/phase/km) = ');
+l = input('Inductance (H/phase/km) = ');
+c = input('Capacitance (F/phase/km) = ');
+len = input('Line length (km) = ');
+f = input('Frequency (Hz) = ');
+
+% ABCD parameter for short transmission line
+if (type == 1)
+    Z = r * len + j * 2 * pi * f * l * len;
+    A = 1 + j * 0;
+    B = Z;
+    C = 0;
+    D = A;
+    ABCD = [A B; C D];
+end
+
+% ABCD parameter for medium transmission line
+if (type == 2)
+    Z = r * len + j * 2 * pi * f * l * len;
+    Y = j * 2 * pi * f * c * len;
+    
+    % For PI model
+    A = 1 + Y * Z / 2;
+    B = Z;
+    C = Y * (1 + Y * Z / 4);
+    D = A;
+    disp('For PI model');
+    ABCD_PI = [A B; C D];
+    
+    % For T model
+    A = 1 + Y * Z / 2;
+    B = Z * (1 + Y * Z / 4);
+    C = Y;
+    D = A;
+    disp('For T model');
+    ABCD_T = [A B; C D];
+end
+
+% ABCD parameter for long transmission line
+if (type == 3)
+    Z = r + j * 2 * pi * f * 1;
+    Y = j * 2 * pi * f * c;
+    gamma = sqrt(Z * Y);
+    Zc = sqrt(Z / Y);
+    A = cosh(gamma * len);
+    B = Zc * sinh(gamma * len);
+    C = (1 / Zc) * sinh(gamma * len);
+    D = A;
+    ABCD = [A B; C D];
+end
+
+VR = input('Receiving end voltage (V/ph) = ');
+IR = input('Receiving end current (A/ph) = ');
+
+if (type == 1)
+    VS = ABCD * [VR; IR];
+    IS = A * VR + B * IR;
+else
+    VS = ABCD_T * [VR; IR];
+    IS = C * VR + D * IR;
+end
+
+Regulation = (abs(VS / A) - abs(VR)) * 100 / abs(VR);
+PR = abs(VR) * abs(IR) * cos(angle(VR) - angle(IR));
+PS = abs(VS) * abs(IS) * cos(angle(VS) - angle(IS));
+efficiency = PR * 100 / PS;
+
+
+
+
+#PS 2 EXP 1
+
+Type = input('Press 1 for equilateral spacing and 2 for unsymmetrical spacing: ');
+
+% Calculations for equilateral spacing
+if Type == 1
+    D = input('Distance between conductors of two phases in meters: ');
+    r = input('Radius of conductor in meters: ');
+    r1 = 0.7788 * r;
+    
+    % Inductance per phase
+    L = 0.2 * log(D / r1);
+    disp(['Inductance of the line is: ' num2str(L) ' mH/phase/km']);
+    
+    % Capacitance per phase
+    Cn = 0.0555 / log(D / r);
+    disp(['Capacitance of the line is: ' num2str(Cn) ' uF/phase/km']);
+end
+
+% Calculations for unsymmetrical spacing
+if Type == 2
+    D12 = input('Distance between conductor 1 and 2 in meters: ');
+    D23 = input('Distance between conductor 2 and 3 in meters: ');
+    D31 = input('Distance between conductor 3 and 1 in meters: ');
+    r = input('Radius of conductor in meters: ');
+    r1 = 0.7788 * r;
+    
+    % Inductance per phase
+    GMD = (D12 * D23 * D31)^(1/3);
+    L = 0.2 * log(GMD / r1);
+    disp(['Inductance of the line is: ' num2str(L) ' mH/phase/km']);
+    
+    % Capacitance per phase
+    Cn = 0.0555 / log(GMD / r);
+    disp(['Capacitance of the line is: ' num2str(Cn) ' uF/phase/km']);
+end
+
+
+
